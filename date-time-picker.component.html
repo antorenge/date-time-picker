@@ -1,0 +1,188 @@
+<div [ngClass]="{
+  '': true,
+  '': inline
+  }" [class]="styleClass" [ngStyle]="style" #container id="date-time-picker">
+    <div *ngIf="!inline && customTemp.children.length == 0" class="input-group">
+        <input type="text" [class]="inputStyleClass" [ngClass]="{
+         'form-control': true,
+         '': focus
+         }" [ngStyle]="inputStyle" [attr.placeholder]="placeHolder" [attr.tabindex]="tabIndex" [attr.id]="inputId" [attr.required]="required" [disabled]="disabled" [value]="formattedValue" [readonly]="readonlyInput" (focus)="onInputFocus($event)" (blur)="onInputBlur($event)"
+            (click)="onInputClick($event)" (input)="onInputUpdate($event)">
+        <span class="input-group-addon">
+            <i *ngIf="type === 'calendar'" class="fa fa-calendar-o" aria-hidden="true" (click)="onInputClick($event)"></i>
+            <i *ngIf="type === 'timer'" class="fa fa-clock-o" aria-hidden="true" (click)="onInputClick($event)"></i>
+        </span>
+        <!-- <i class="fa fa-times" aria-hidden="true" [hidden]="!value" (click)="clearValue($event)"></i> -->
+    </div>
+    <!-- Workaround of ng-content default content (angular issue #12530) -->
+    <div [ngClass]="{'': customTemp.children.length !== 0}" #customTemp (click)="onInputClick($event)">
+        <ng-content></ng-content>
+    </div>
+    <div class="bootstrap-datetimepicker-widget dropdown-menu" [ngStyle]="{'display': inline ? 'inline-block' : null}" [@fadeInOut]="dialogVisible? 'visible' : (!inline? 'hidden': null)" (click)="onDialogClick($event)" #dialog>
+        <div *ngIf="showHeader" class="">
+            <span *ngIf="value; else elseBlock">{{formattedValue}}</span>
+            <ng-template #elseBlock><span>{{placeHolder}}</span></ng-template>
+        </div>
+        <div *ngIf="type ==='both' || type === 'calendar'" class="datepicker">
+            <div class="datepicker-days" [hidden]="dialogType !== 1">
+                <table class="table-condensed">
+                    <thead>
+                        <tr>
+                            <th class="prev">
+                                <i class="fa fa-chevron-left" (click)="prevMonth($event)" title="Previous Month" aria-hidden="true"></i>
+                            </th>
+                            <th class="picker-switch" title="Select Month" colspan="5">
+                                <span (click)="changeDialogType(2)">{{pickerMonth}} {{pickerYear}}</span>
+                            </th>
+                            <th class="next">
+                                <i class="fa fa-chevron-right" (click)="nextMonth($event)" title="Next Month" aria-hidden="true"></i>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th *ngFor="let weekDay of calendarWeekdays" class="dow" scope="col">
+                                <span>{{weekDay}}</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let week of calendarDays">
+                            <td *ngFor="let d of week" class="day" [ngClass]="{
+                     'active': isSelectedDay(d.date),
+                     'old': !isValidDay(d.date),
+                     'new': d.otherMonth,
+                     'disabled': d.hide,
+                     'today': d.today
+                 }" (click)="onSelectDate($event, d.date)">
+                                {{d.num}}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="datepicker-months" [hidden]="dialogType !== 2">
+                <table class="table-condensed">
+                    <thead>
+                        <tr>
+                            <th class="prev">
+                                <i class="fa fa-chevron-left" (click)="prevMonth($event)" title="Previous Month" aria-hidden="true"></i>
+                            </th>
+                            <th class="picker-switch" title="Select Year">
+                                <span (click)="changeDialogType(3)">{{pickerYear}}</span>
+                            </th>
+                            <th class="next">
+                                <i class="fa fa-chevron-right" (click)="nextMonth($event)" title="Next Month" aria-hidden="true"></i>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="" *ngFor="let months of calendarMonths; let i = index">
+                            <td *ngFor="let month of months; let j = index" class="month" [ngClass]="{'active': isCurrentMonth(i*3 + j)}" (click)="selectMonth(i*3 + j)">
+                                <a>{{month}}</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="datepicker-years" [hidden]="dialogType !== 3">
+                <table class="table-condensed">
+                    <thead>
+                        <tr>
+                            <th class="prev">
+                                <i class="fa fa-chevron-left" (click)="prevMonth($event)" title="Previous Month" aria-hidden="true"></i>
+                            </th>
+                            <th class="picker-switch" title="Select Decade">
+                                <span (click)="changeDialogType(3)">{{ pickerYear }}</span>
+                            </th>
+                            <th class="next">
+                                <i class="fa fa-chevron-right" (click)="nextMonth($event)" title="Next Month" aria-hidden="true"></i>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let years of calendarYears">
+                            <td class="year" *ngFor="let year of years" [ngClass]="{'active': isCurrentYear(+year)}" (click)="selectYear(+year)">
+                                <a>{{year}}</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-simple pull-left" (click)="generateYearList('prev')">
+                    <i class="fa fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button class="btn btn-simple pull-right" (click)="generateYearList('next')">
+                    <i class="fa fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+        <div *ngIf="type ==='both' || type === 'timer'" class="timepicker">
+            <table class="table-condensed">
+                <tbody>
+                    <tr>
+                        <td>
+                            <button tabindex="-1" title="Increment Hour" class="btn btn-simple" (click)="setHours($event, 'increase', hoursInput)">
+                                <i class="fa fa-chevron-up" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                        <td class="separator"></td>
+                        <td>
+                            <button tabindex="-1" title="Increment Minute" class="btn btn-simple" (click)="setMinutes($event, 'increase', minutesInput)">
+                                <i class="fa fa-chevron-up" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                        <td *ngIf="showSecondsTimer">
+                            <button tabindex="-1" title="Increment Seconds" class="btn btn-simple" (click)="setSeconds($event, 'increase', secondsInput)">
+                                <i class="fa fa-chevron-up" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                        <td *ngIf="hourFormat === '12'"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input class="form-control timepicker-input" placeholder="hh" onfocus="this.select()" [ngModel]="hourValue | numberFixedLen : 2" (blur)="onTimerInputBlur($event, hoursInput, 'hours', hourValue)" #hoursInput>
+                        </td>
+                        <td class="separator">:</td>
+                        <td>
+                            <input class="form-control timepicker-input" placeholder="mm" onfocus="this.select()" [ngModel]="minValue | numberFixedLen : 2" (blur)="onTimerInputBlur($event, minutesInput, 'minutes', minValue)" #minutesInput>
+                        </td>
+                        <td *ngIf="showSecondsTimer">
+                            <span class="separator">:</span>
+                        </td>
+                        <td *ngIf="hourFormat === '12'">
+                            <span>
+                                <button class="btn btn-primary" (click)="toggleMeridian($event)" tabindex="-1">{{meridianValue}}</button>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <button tabindex="-1" title="Decrement Hour" class="btn btn-simple" (click)="setHours($event, 'decrease', hoursInput)">
+                                <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                        <td class="separator"></td>
+                        <td>
+                            <button tabindex="-1" title="Decrement Minute" class="btn btn-simple" (click)="setMinutes($event, 'decrease', minutesInput)">
+                                <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                        <td *ngIf="showSecondsTimer">
+                            <button tabindex="-1" title="Decrement Minute" class="btn btn-simple" (click)="setSeconds($event, 'decrease', secondsInput)">
+                                <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                        <td *ngIf="hourFormat === '12'"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <button class="btn btn-small btn-wd btn-simple btn-success" (click)="onConfirmClick($event)">Confirm</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div *ngIf="showButtons">
+            <button class="btn btn-small btn-success" (click)="onConfirmClick($event)">Confirm</button>
+            <button class="btn btn-small btn-danger" (click)="onCloseClick($event)">Close</button>
+        </div>
+    </div>
+</div>
